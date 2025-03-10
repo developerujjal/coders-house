@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { IoMdPhonePortrait } from "react-icons/io";
 import { CiMail } from "react-icons/ci";
+import Button from "../Btn/Button";
 
 
-export default function PhoneNumberInput() {
+export default function PhoneNumberInput({onNext}) {
     const [selected, setSelected] = useState("phone");
+
 
     return (
         <section>
@@ -30,9 +32,9 @@ export default function PhoneNumberInput() {
 
                                             />
                                         </div>
-                                        <button className="mt-4 bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-white font-medium w-full">
-                                            Next →
-                                        </button>
+
+                                        <Button onNext={onNext} />
+
                                         <p className="text-xs text-gray-400 mt-2">
                                             By entering your number, you're agreeing to our
                                             <span className="text-blue-400"> Terms of Service</span> and
@@ -53,9 +55,9 @@ export default function PhoneNumberInput() {
                                                 className="bg-transparent w-full outline-none text-gray-400 text-center"
                                             />
                                         </div>
-                                        <button className="mt-4 bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-white font-medium w-full">
-                                            Next →
-                                        </button>
+
+                                        <Button onNext={onNext} />
+
                                         <p className="text-xs text-gray-400 mt-2">
                                             By entering your number, you're agreeing to our
                                             <span className="text-blue-400"> Terms of Service</span> and
@@ -65,7 +67,6 @@ export default function PhoneNumberInput() {
                                 </>
                             )
                         }
-
 
 
                         <div className="absolute -top-12 right-0 flex gap-3">

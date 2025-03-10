@@ -1,9 +1,17 @@
 import React from 'react';
 import { FaLongArrowAltRight } from "react-icons/fa";
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 
 const Home = () => {
+
+    const navigate  = useNavigate();
+
+    const GoToRegister = () => {
+        navigate('/register')
+    }
+
+
     return (
         <section>
             <div className='container mx-auto px-4'>
@@ -14,7 +22,9 @@ const Home = () => {
                             Welcome to Codershouse!
                         </h1>
                         <p className='xl:px-16 font-nunito text-[#C4C5C5] my-5 xl:my-8'>We’re working hard to get Codershouse ready for everyone! While we wrap up the finishing youches, we’re adding people gradually to make sure nothing breaks </p>
-                        <button className='flex items-center gap-2 cursor-pointer bg-[#0077FF] px-4 py-2.5 font-bold text-base justify-center mx-auto mb-3 hover:bg-[#0756b1] transition-all rounded-full'>
+                        <button 
+                        onClick={GoToRegister}
+                        className='flex items-center gap-2 cursor-pointer bg-[#0077FF] px-4 py-2.5 font-bold text-base justify-center mx-auto mb-3 hover:bg-[#0756b1] transition-all rounded-full'>
                             Get your username
                             <FaLongArrowAltRight />
                         </button>

@@ -1,20 +1,23 @@
-import React, { useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import React from 'react';
+import { Navigate } from 'react-router';
 
 const SemiProtectedRoute = ({ children }) => {
     const isUser = true;  // Replace with actual authentication state
     const isActive = false; // Replace with actual isUser status
-    const navigate = useNavigate();
 
-    useEffect(() => {
-        if (!isUser) {
-            navigate('/authenticate');
-        } else if (isUser && isActive) {
-            navigate('/rooms');
-        }
-    }, [isUser, isActive, navigate]);
+    // useEffect(() => {
+    //     if (!isUser) {
+    //         navigate('/authenticate');
+    //     } else if (isUser && isActive) {
+    //         navigate('/rooms');
+    //     }
+    // }, [isUser, isActive, navigate]);
 
-    // Render children only if isUser exists and isActive is false
+
+    if (!isUser) {
+        return <Navigate to={'/authenticate'} />
+    }
+
     if (isUser && !isActive) {
         return children;
     }

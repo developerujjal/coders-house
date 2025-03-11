@@ -1,24 +1,25 @@
-import React, { useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import React from 'react';
+import { Navigate } from 'react-router';
 
 const GuestRoute = ({ children }) => {
 
-    const isUser = true;
-    const isActive = false;
-    const navigate = useNavigate();
+    const isUser = false;
+    const isActive = true;
 
 
-    useEffect(() => {
-        if (isUser) {
-            if (!isActive) {
-                navigate('/activate');
-            } else {
-                navigate('/rooms');
-            }
-        }
-    }, [isUser, isActive, navigate]);
+    // useEffect(() => {
+    //     if (isUser) {
+    //         if (!isActive) {
+    //             navigate('/activate');
+    //         } else {
+    //             navigate('/rooms');
+    //         }
+    //     }
+    // }, [isUser, isActive, navigate]);
 
-
+    if (!isActive) {
+        return <Navigate to={'/activate'} />
+    }
 
     if (!isUser) {
         return children;

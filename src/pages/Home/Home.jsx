@@ -8,7 +8,8 @@ const Home = () => {
     const navigate  = useNavigate();
 
     const GoToRegister = () => {
-        navigate('/register')
+        // navigate('/register')
+        console.log("hello")
     }
 
 

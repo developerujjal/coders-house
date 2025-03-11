@@ -7,10 +7,7 @@ import StepUsername from '../../components/Steps/StepUsername/StepUsername';
 
 const steps = {
     1: PhoneNumberInput,
-    2: StepCode,
-    3: StepName,
-    4: StepAvatar,
-    5: StepUsername
+    2: StepCode
 }
 
 const Register = () => {

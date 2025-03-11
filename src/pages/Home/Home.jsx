@@ -8,8 +8,8 @@ const Home = () => {
     const navigate  = useNavigate();
 
     const GoToRegister = () => {
-        // navigate('/register')
-        console.log("hello")
+        navigate('/authenticate')
+        
     }
 
 
@@ -26,7 +26,7 @@ const Home = () => {
                         <button 
                         onClick={GoToRegister}
                         className='flex items-center gap-2 cursor-pointer bg-[#0077FF] px-4 py-2.5 font-bold text-base justify-center mx-auto mb-3 hover:bg-[#0756b1] transition-all rounded-full'>
-                            Get your username
+                            Let's Go
                             <FaLongArrowAltRight />
                         </button>
                         <p className='text-center text-[#0077FF] text-sm'>Have an invite text? <Link className='font-bold text-md'>Singin</Link></p>

@@ -2,10 +2,21 @@ import { useState } from "react";
 import { IoMdPhonePortrait } from "react-icons/io";
 import { CiMail } from "react-icons/ci";
 import Button from "../Btn/Button";
+import useAxiosCommon from "../../../hooks/useAxiosCommon";
 
 
-export default function PhoneNumberInput({onNext}) {
+export default function PhoneNumberInput({ onNext }) {
     const [selected, setSelected] = useState("phone");
+    const [number, setNumber] = useState(0);
+    const axiosCommon = useAxiosCommon();
+
+    // console.log(number)
+
+    const handleSendOTP = async () => {
+        const res = await axiosCommon.post('/api/send-otp', { phone: number });
+        console.log(res)
+    }
+
 
 
     return (
@@ -27,13 +38,19 @@ export default function PhoneNumberInput({onNext}) {
                                             </span>
                                             <input
                                                 type="text"
+                                                value={number}
                                                 placeholder="0123456789"
+                                                onChange={(e) => setNumber(e.target.value)}
                                                 className="bg-transparent w-full outline-none text-gray-400"
 
                                             />
                                         </div>
 
-                                        <Button onNext={onNext} />
+                                        <button
+                                            onClick={handleSendOTP}
+                                            className="mt-4 bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-white font-medium w-full cursor-pointer">
+                                            Next →
+                                        </button>
 
                                         <p className="text-xs text-gray-400 mt-2">
                                             By entering your number, you're agreeing to our

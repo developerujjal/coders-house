@@ -2,7 +2,11 @@ import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
     isActive: false,
-    user: null
+    user: null,
+    otp: {
+        phone: '',
+        hash: ''
+    }
 }
 
 export const authSlice = createSlice({
@@ -17,11 +21,19 @@ export const authSlice = createSlice({
 
 
 
+        },
+
+        setOpt: (state, action) => {
+            const {hash, phone} = action.payload;
+
+            state.otp.hash = hash;
+            state.otp.phone = phone
+
         }
     },
 })
 
 // Action creators are generated for each case reducer function
-export const { setAuth } = authSlice.actions
+export const { setAuth, setOpt} = authSlice.actions
 
 export default authSlice.reducer

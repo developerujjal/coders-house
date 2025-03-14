@@ -3,18 +3,28 @@ import { IoMdPhonePortrait } from "react-icons/io";
 import { CiMail } from "react-icons/ci";
 import Button from "../Btn/Button";
 import useAxiosCommon from "../../../hooks/useAxiosCommon";
+import { useDispatch } from 'react-redux'
+import { setOpt } from '../../../features/auth/authSlice'
 
 
 export default function PhoneNumberInput({ onNext }) {
     const [selected, setSelected] = useState("phone");
     const [number, setNumber] = useState(0);
     const axiosCommon = useAxiosCommon();
+    const dispatch = useDispatch();
 
     // console.log(number)
 
     const handleSendOTP = async () => {
         const res = await axiosCommon.post('/api/send-otp', { phone: number });
-        console.log(res)
+        console.log(res?.data)
+
+        dispatch(setOpt({
+            hash: res?.data?.data,
+            phone: res?.data?.phone
+        }));
+
+        onNext();
     }
 
 

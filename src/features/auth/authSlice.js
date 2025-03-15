@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
-    isActive: false,
+    isAuth: false,
     user: null,
     otp: {
         phone: '',
@@ -14,17 +14,19 @@ export const authSlice = createSlice({
     initialState,
     reducers: {
         setAuth: (state, action) => {
-            // Redux Toolkit allows us to write "mutating" logic in reducers. It
-            // doesn't actually mutate the state because it uses the Immer library,
-            // which detects changes to a "draft state" and produces a brand new
-            // immutable state based off those changes
+            // const { accessToken, user } = action.payload;
+            console.log("setAuth called with:", action.payload);
 
+            const { user } = action.payload;
+
+            state.user = user;
+            state.isAuth = true;
 
 
         },
 
         setOpt: (state, action) => {
-            const {hash, phone} = action.payload;
+            const { hash, phone } = action.payload;
 
             state.otp.hash = hash;
             state.otp.phone = phone
@@ -34,6 +36,6 @@ export const authSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { setAuth, setOpt} = authSlice.actions
+export const { setAuth, setOpt } = authSlice.actions
 
 export default authSlice.reducer

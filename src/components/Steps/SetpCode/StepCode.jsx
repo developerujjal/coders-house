@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import Button from '../Btn/Button';
 import useAxiosCommon from '../../../hooks/useAxiosCommon';
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
+import {setAuth} from '../../../features/auth/authSlice';
 
 const StepCode = () => {
 
     const [otp, setOtp] = useState('');
     const { phone, hash } = useSelector((state) => state.auth.otp);
+    const dispatch = useDispatch();
     const axiosCommon = useAxiosCommon();
 
 
@@ -17,7 +19,9 @@ const StepCode = () => {
                 phone,
                 hash
             });
-            console.log(res)
+
+            dispatch(setAuth(res?.data))
+            // console.log(res)
 
         } catch (error) {
             console.log(error)

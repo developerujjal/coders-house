@@ -1,27 +1,13 @@
 import React from 'react';
 import { Navigate } from 'react-router';
+import { useSelector } from 'react-redux';
 
 const GuestRoute = ({ children }) => {
-
-    const isUser = false;
-    const isActive = true;
+    const { isAuth } = useSelector((state) => state.auth)
 
 
-    // useEffect(() => {
-    //     if (isUser) {
-    //         if (!isActive) {
-    //             navigate('/activate');
-    //         } else {
-    //             navigate('/rooms');
-    //         }
-    //     }
-    // }, [isUser, isActive, navigate]);
 
-    if (!isActive) {
-        return <Navigate to={'/activate'} />
-    }
-
-    if (!isUser) {
+    if (!isAuth) {
         return children;
     }
 

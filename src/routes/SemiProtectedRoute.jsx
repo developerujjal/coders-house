@@ -1,9 +1,12 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router';
 
+
 const SemiProtectedRoute = ({ children }) => {
-    const isUser = true;  // Replace with actual authentication state
-    const isActive = false; // Replace with actual isUser status
+    const { user, isAuth } = useSelector((state) => state.auth)
+
+
 
     // useEffect(() => {
     //     if (!isUser) {
@@ -14,11 +17,11 @@ const SemiProtectedRoute = ({ children }) => {
     // }, [isUser, isActive, navigate]);
 
 
-    if (!isUser) {
+    if (!isAuth) {
         return <Navigate to={'/authenticate'} />
     }
 
-    if (isUser && !isActive) {
+    if (isAuth && !user?.isActivated) {
         return children;
     }
 

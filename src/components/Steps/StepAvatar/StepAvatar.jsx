@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import Button from '../Btn/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAvater } from '../../../features/activated/activatedSlice';
+import { setAuth } from '../../../features/auth/authSlice';
 import useAxiosCommon from '../../../hooks/useAxiosCommon';
 
 
 
+// eslint-disable-next-line no-unused-vars
 const StepAvatar = ({ onNext }) => {
 
     const { name, avater } = useSelector((state) => state.activate);
@@ -29,19 +31,22 @@ const StepAvatar = ({ onNext }) => {
 
     const handleSubmit = async () => {
         try {
-            const res = await axiosCommon.post('/api/activate', {
+            const { data } = await axiosCommon.post('/api/activate', {
                 name,
                 avater
             });
 
-            console.log(res.data)
+            console.log(data)
+            if (data?.auth) {
+                dispatch(setAuth(data))
+            }
 
         } catch (error) {
             console.log(error)
         }
     }
 
-    
+
 
     return (
 

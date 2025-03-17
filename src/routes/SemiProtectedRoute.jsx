@@ -4,28 +4,18 @@ import { Navigate } from 'react-router';
 
 
 const SemiProtectedRoute = ({ children }) => {
-    const { user, isAuth } = useSelector((state) => state.auth)
+    const { user, loading } = useSelector((state) => state.user)
 
+    if (loading) {
+        return <p>Loading......</p>
+    }
 
-
-    // useEffect(() => {
-    //     if (!isUser) {
-    //         navigate('/authenticate');
-    //     } else if (isUser && isActive) {
-    //         navigate('/rooms');
-    //     }
-    // }, [isUser, isActive, navigate]);
-
-
-    if (!isAuth) {
+    if (!user) {
         return <Navigate to={'/authenticate'} />
     }
 
-    if (isAuth && !user?.isActivated) {
-        return children;
-    }
 
-    return <Navigate to={'/rooms'} />
+    return children;
 };
 
 export default SemiProtectedRoute;

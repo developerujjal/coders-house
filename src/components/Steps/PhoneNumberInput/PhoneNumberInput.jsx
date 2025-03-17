@@ -5,6 +5,7 @@ import Button from "../Btn/Button";
 import useAxiosCommon from "../../../hooks/useAxiosCommon";
 import { useDispatch } from 'react-redux'
 import { setOpt } from '../../../features/auth/authSlice'
+import GoogleLogIn from "../../SocialLogin/GoogleLogIn";
 
 
 export default function PhoneNumberInput({ onNext }) {
@@ -110,6 +111,8 @@ export default function PhoneNumberInput({ onNext }) {
                                 <CiMail className="w-5 h-5 text-white" />
                             </button>
                         </div>
+
+                        <GoogleLogIn />
                     </div>
                 </div>
             </div>

@@ -3,16 +3,18 @@ import { Navigate } from 'react-router';
 import { useSelector } from 'react-redux';
 
 const GuestRoute = ({ children }) => {
-    const { isAuth } = useSelector((state) => state.auth)
+    const { user, loading } = useSelector((state) => state.user)
 
+    if (loading) {
+        return <p>Loading......</p>
+    }
 
-
-    if (!isAuth) {
+    if (!user) {
         return children;
     }
 
 
-    return <Navigate to={'/rooms'} />
+    return <Navigate to={'/rooms'} />;
 
 };
 

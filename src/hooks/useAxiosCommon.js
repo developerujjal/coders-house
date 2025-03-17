@@ -11,6 +11,30 @@ const publicAxios = axios.create({
 })
 
 const useAxiosCommon = () => {
+    // return publicAxios;
+
+    // publicAxios.interceptors.response.use((config) => {
+    //     return config;
+    // },
+    //     async (error) => {
+    //         const orginalReq = error.config;
+    //         if (error.response.status === 401 && orginalReq && !orginalReq.isRetry) {
+    //             orginalReq.isRetry = true;
+
+    //             try {
+    //                 await axios.get('http://localhost:5000/api/refresh', {
+    //                     withCredentials: true
+    //                 })
+    //                 return publicAxios.request(orginalReq)
+
+    //             } catch (error) {
+    //                 console.log(error.message)
+    //             }
+    //         } else {
+    //             throw error;
+    //         }
+    //     })
+
     return publicAxios;
 };
 

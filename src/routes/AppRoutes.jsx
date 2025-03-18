@@ -9,6 +9,7 @@ import ActivatePage from '../pages/Activate/ActivatePage';
 import SemiProtectedRoute from './SemiProtectedRoute';
 import RoomsRoute from './RoomsRoute';
 import Rooms from '../pages/Rooms/Rooms';
+import RoomsLayout from '../layouts/RoomsLayout';
 
 
 const AppRoutes = () => {
@@ -19,7 +20,10 @@ const AppRoutes = () => {
                     <Route index element={<Home />} />
                     <Route path='/authenticate' element={<GuestRoute><Register /></GuestRoute>} />
                     <Route path='/activate' element={<SemiProtectedRoute><ActivatePage /></SemiProtectedRoute>} />
-                    <Route path='/rooms' element={<RoomsRoute><Rooms /></RoomsRoute>} />
+                </Route>
+
+                <Route path='/rooms' element={<RoomsLayout />}>
+                    <Route index element={<Rooms />} />
                 </Route>
             </Routes>
         </>

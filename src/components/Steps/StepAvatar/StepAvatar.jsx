@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from '../Btn/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAvater } from '../../../features/activated/activatedSlice';
@@ -13,7 +13,8 @@ const StepAvatar = ({ onNext }) => {
     const { name, avater } = useSelector((state) => state.activate);
     const dispatch = useDispatch();
     const [image, setImage] = useState('https://static.vecteezy.com/system/resources/thumbnails/029/364/941/small_2x/3d-carton-of-boy-going-to-school-ai-photo.jpg');
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(true);
+    const [unMounted, setUnMounted] = useState(false);
     const axiosCommon = useAxiosCommon();
 
 
@@ -32,7 +33,7 @@ const StepAvatar = ({ onNext }) => {
 
     const handleSubmit = async () => {
         setLoading(true);
-        if(!name || !avater){
+        if (!name || !avater) {
             return;
         }
 
@@ -44,7 +45,9 @@ const StepAvatar = ({ onNext }) => {
 
             console.log(data)
             if (data?.auth) {
-                dispatch(setAuth(data))
+                if (!unMounted) {
+                    dispatch(setAuth(data))
+                }
             }
 
         } catch (error) {
@@ -55,6 +58,13 @@ const StepAvatar = ({ onNext }) => {
     }
 
 
+    useEffect(() => {
+        return () => {
+            setUnMounted(true);
+        }
+    }, [])
+
+    
     //Activation Loader
     if (loading) {
         return <div>Activation is Progress</div>

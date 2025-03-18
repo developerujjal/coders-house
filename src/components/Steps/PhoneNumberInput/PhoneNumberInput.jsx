@@ -17,6 +17,10 @@ export default function PhoneNumberInput({ onNext }) {
     // console.log(number)
 
     const handleSendOTP = async () => {
+        if(!number){
+            return;
+        }
+        
         const res = await axiosCommon.post('/api/send-otp', { phone: number });
         console.log(res?.data)
 

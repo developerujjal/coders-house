@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { auth } from '../firebase/firebase.config';
 import { useDispatch } from "react-redux";
 import { setAuthUser, setLoading } from '../features/user/userSlice.js'
+import axios from 'axios';
 
 const AuthProvider = ({ children }) => {
     const dispatch = useDispatch();
@@ -10,7 +11,7 @@ const AuthProvider = ({ children }) => {
     useState(() => {
         dispatch(setLoading(true));
 
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
 
             const userData = {
                 name: currentUser?.displayName,
@@ -18,14 +19,30 @@ const AuthProvider = ({ children }) => {
                 image: currentUser?.photoURL
             }
 
-            dispatch(setAuthUser(userData))
+            const data = currentUser ? userData : null;
+
+            dispatch(setAuthUser(data))
 
             if (currentUser) {
-                console.log(currentUser)
+                try {
+                    await axios.post('http://localhost:5000/api/jwt-token', userData, {
+                        withCredentials: true
+                    })
+                } catch (error) {
+                    console.log(error)
+                }
             } else {
-                console.log(currentUser)
-            }
+                try {
+                    await axios.post('http://localhost:5000/api/removed-jwt', {}, {
+                        withCredentials: true
+                    });
 
+                    dispatch(setLoading(true))
+
+                } catch (error) {
+                    console.log(error)
+                }
+            }
 
         });
 

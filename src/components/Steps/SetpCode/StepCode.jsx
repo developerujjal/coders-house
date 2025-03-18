@@ -13,6 +13,9 @@ const StepCode = () => {
 
 
     const handleSubmit = async () => {
+        if(!otp || !phone || !hash){
+            return;
+        }
         try {
             const res = await axiosCommon.post('/api/verify-otp', {
                 otp,

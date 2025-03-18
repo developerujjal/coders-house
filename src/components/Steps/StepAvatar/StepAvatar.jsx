@@ -13,6 +13,7 @@ const StepAvatar = ({ onNext }) => {
     const { name, avater } = useSelector((state) => state.activate);
     const dispatch = useDispatch();
     const [image, setImage] = useState('https://static.vecteezy.com/system/resources/thumbnails/029/364/941/small_2x/3d-carton-of-boy-going-to-school-ai-photo.jpg');
+    const [loading, setLoading] = useState(true)
     const axiosCommon = useAxiosCommon();
 
 
@@ -30,6 +31,11 @@ const StepAvatar = ({ onNext }) => {
 
 
     const handleSubmit = async () => {
+        setLoading(true);
+        if(!name || !avater){
+            return;
+        }
+
         try {
             const { data } = await axiosCommon.post('/api/activate', {
                 name,
@@ -43,7 +49,15 @@ const StepAvatar = ({ onNext }) => {
 
         } catch (error) {
             console.log(error)
+        } finally {
+            setLoading(false)
         }
+    }
+
+
+    //Activation Loader
+    if (loading) {
+        return <div>Activation is Progress</div>
     }
 
 

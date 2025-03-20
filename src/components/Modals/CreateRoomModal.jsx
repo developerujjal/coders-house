@@ -1,11 +1,35 @@
 import { useState } from "react";
+import useAxiosCommon from "../../hooks/useAxiosCommon";
 
 export default function CreateRoomModal({ setModalOpen }) {
 
     const [roomType, setRoomType] = useState('open');
-    const [topic, setTopic] = useState('')
+    const [topic, setTopic] = useState('');
+    const axiosCommon = useAxiosCommon();
 
     console.log(topic)
+
+
+
+    const handleCreateRoom = async () => {
+
+        try {
+
+            if (!roomType || !topic) {
+                return;
+            }
+
+            const roomData = {
+                roomTopic: topic,
+                roomType
+            }
+            const res = await axiosCommon.post('/api/room', roomData);
+            console.log(res)
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
 
     return (
@@ -49,7 +73,9 @@ export default function CreateRoomModal({ setModalOpen }) {
                 </div>
 
                 <p className="text-center text-gray-400 text-sm mt-4">Start a room, open to everyone</p>
-                <button className="w-full mt-3 bg-green-600 cursor-pointer hover:bg-green-500 text-white py-2 rounded-lg flex justify-center items-center gap-2 text-lg">
+                <button
+                    onClick={handleCreateRoom}
+                    className="w-full mt-3 bg-green-600 cursor-pointer hover:bg-green-500 text-white py-2 rounded-lg flex justify-center items-center gap-2 text-lg">
                     🚀 Let's Go
                 </button>
             </div>

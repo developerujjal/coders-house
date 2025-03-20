@@ -1,5 +1,10 @@
-import React from 'react';
-import axios from 'axios'
+
+
+import axios from "axios";
+import { signOut } from "firebase/auth";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { auth } from "../firebase/firebase.config";
 
 const publicAxios = axios.create({
     baseURL: 'http://localhost:5000',
@@ -11,31 +16,32 @@ const publicAxios = axios.create({
 })
 
 const useAxiosCommon = () => {
-    // return publicAxios;
+    const navigate = useNavigate()
+    // const location = useLocation()
 
-    // publicAxios.interceptors.response.use((config) => {
-    //     return config;
-    // },
-    //     async (error) => {
-    //         const orginalReq = error.config;
-    //         if (error.response.status === 401 && orginalReq && !orginalReq.isRetry) {
-    //             orginalReq.isRetry = true;
 
-    //             try {
-    //                 await axios.get('http://localhost:5000/api/refresh', {
-    //                     withCredentials: true
-    //                 })
-    //                 return publicAxios.request(orginalReq)
+    useEffect(() => {
+        const interceptor = publicAxios.interceptors.response.use(
+            (res) => {
+                return res
+            },
+            async (error) => {
+                if (error.response.status === 401 || error.response.status === 403) {
+                    await signOut(auth);
+                    navigate('/');
+                }
 
-    //             } catch (error) {
-    //                 console.log(error.message)
-    //             }
-    //         } else {
-    //             throw error;
-    //         }
-    //     })
+                return Promise.reject(error)
+            })
 
-    return publicAxios;
+        return () => {
+            publicAxios.interceptors.response.eject(interceptor)
+        }
+
+    }, [navigate])
+
+
+    return publicAxios
 };
 
 export default useAxiosCommon;

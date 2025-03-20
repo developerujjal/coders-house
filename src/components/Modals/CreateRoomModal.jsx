@@ -1,11 +1,13 @@
 import { useState } from "react";
 import useAxiosCommon from "../../hooks/useAxiosCommon";
+import { useNavigate } from "react-router";
 
 export default function CreateRoomModal({ setModalOpen }) {
 
     const [roomType, setRoomType] = useState('open');
     const [topic, setTopic] = useState('');
     const axiosCommon = useAxiosCommon();
+    const navigate = useNavigate();
 
     console.log(topic)
 
@@ -25,6 +27,10 @@ export default function CreateRoomModal({ setModalOpen }) {
             }
             const res = await axiosCommon.post('/api/room', roomData);
             console.log(res)
+
+            if (res.data) {
+                navigate(`/room/${res.data?._id}`)
+            }
 
         } catch (error) {
             console.log(error)

@@ -10,6 +10,8 @@ import SemiProtectedRoute from './SemiProtectedRoute';
 import RoomsRoute from './RoomsRoute';
 import Rooms from '../pages/Rooms/Rooms';
 import RoomsLayout from '../layouts/RoomsLayout';
+import SingelRoomLayout from '../layouts/SingelRoomLayout';
+import Room from '../pages/Room/Room';
 
 
 const AppRoutes = () => {
@@ -24,6 +26,10 @@ const AppRoutes = () => {
 
                 <Route path='/rooms' element={<RoomsLayout />}>
                     <Route index element={<Rooms />} />
+                </Route>
+
+                <Route path='/room' element={<SemiProtectedRoute><SingelRoomLayout /></SemiProtectedRoute>}>
+                    <Route path=':id' element={<Room />} />
                 </Route>
             </Routes>
         </>

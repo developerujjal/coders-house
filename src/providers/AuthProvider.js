@@ -13,6 +13,7 @@ const AuthProvider = ({ children }) => {
 
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
 
+            console.log(currentUser)
             const userData = {
                 name: currentUser?.displayName,
                 email: currentUser?.email,
@@ -25,7 +26,11 @@ const AuthProvider = ({ children }) => {
 
             if (currentUser) {
                 try {
-                    await axios.post('http://localhost:5000/api/jwt-token', userData, {
+                    await axios.post('http://localhost:5000/api/jwt-token', {
+                        name: currentUser?.displayName,
+                        email: currentUser?.email,
+                        image: currentUser?.photoURL
+                    }, {
                         withCredentials: true
                     })
                 } catch (error) {

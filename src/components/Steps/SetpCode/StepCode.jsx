@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Button from '../Btn/Button';
 import useAxiosCommon from '../../../hooks/useAxiosCommon';
 import { useDispatch, useSelector } from 'react-redux'
-import {setAuth} from '../../../features/auth/authSlice';
+import { setAuth } from '../../../features/auth/authSlice';
 
 const StepCode = () => {
 
@@ -13,7 +13,7 @@ const StepCode = () => {
 
 
     const handleSubmit = async () => {
-        if(!otp || !phone || !hash){
+        if (!otp || !phone || !hash) {
             return;
         }
         try {

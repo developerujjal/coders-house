@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './Rooms.module.css';
 import RoomCard from '../../components/RoomCard/RoomCard';
+import CreateRoomModal from '../../components/Modals/CreateRoomModal';
 
 const rooms = [
     {
@@ -74,6 +75,7 @@ const rooms = [
 ];
 
 const Rooms = () => {
+    const [modalOpen, setModalOpen] = useState(false)
 
     return (
         <>
@@ -85,11 +87,16 @@ const Rooms = () => {
                     </div>
                     <div className={styles.right}>
                         <button
+                        onClick={() => setModalOpen(true)}
                             className={styles.startRoomButton}
                         >
                             <span>Start a room</span>
                         </button>
                     </div>
+
+                    {
+                        modalOpen && <CreateRoomModal setModalOpen={setModalOpen} />
+                    }
                 </div>
 
                 <div className={styles.roomList}>

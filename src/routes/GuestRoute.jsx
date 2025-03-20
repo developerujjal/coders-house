@@ -5,9 +5,9 @@ import { useSelector } from 'react-redux';
 const GuestRoute = ({ children }) => {
     const { user, loading } = useSelector((state) => state.user)
 
-    if (loading) {
-        return <p>Loading......</p>
-    }
+    // if (loading) {
+    //     return <p>Loading mate 01......</p>
+    // }
 
     if (!user) {
         return children;

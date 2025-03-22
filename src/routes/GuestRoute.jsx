@@ -14,7 +14,7 @@ const GuestRoute = ({ children }) => {
     }
 
 
-    return <Navigate to={'/rooms'} />;
+    return <Navigate to={'/'} />;
 
 };
 

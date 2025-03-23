@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import useStateWithFallback from "./useStateWithFallback";
 
 const users = [
@@ -15,22 +15,54 @@ const useWebRTC = (roomId, user) => {
     audioElements.current[userId] = instance;
   };
 
+  //extra checks
+  // cb mean call back fn
+  const addNewClients = useCallback(
+    (newClient, cb) => {
+      const lookingFor = clients.find((client) => client.id === newClient.id);
+      if (lookingFor === undefined) {
+        setClients((exsitingClient) => [...exsitingClient, newClient], cb);
+      }
+    },
+    [clients, setClients]
+  );
+
   //Capture the audio media
 
   useEffect(() => {
     const startCapture = async () => {
-      localMediaStream.current = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
+      try {
+        localMediaStream.current = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+
+      } catch (error) {
+        console.error("Error accessing microphone:", error);
+      }
     };
 
-    startCapture();
-  }, []);
+    startCapture().then(() => {
+      addNewClients(user, () => {
+        const audioElement = audioElements.current[user?.id];
+        if (audioElement) {
+          audioElement.volume = 0,
+            audioElement.srcObject = localMediaStream.current
+        }
+
+      });
+    });
+  }, [addNewClients, user]);
+
+
 
   return { clients, provideRef };
 };
 
 export default useWebRTC;
+
+
+
+
 
 /* 
 
@@ -72,4 +104,85 @@ useEffect(() => {
 
 
 
+03: Problem=>
+
+useCallback remembers the old state of clients.
+
+If clients is updated, this function might still use the old value and fail to add a new client.
+
+🔹 Fix: Use an updater function inside setClients.
+
+This ensures that React always uses the latest state when updating clients:
+
+================
+const addNewClients = useCallback(
+  (newClient, cb) => {
+    setClients((existingClients) => {
+      const lookingFor = existingClients.find((client) => client.id === newClient.id);
+      if (!lookingFor) {
+        return [...existingClients, newClient];
+      }
+      return existingClients;
+    }, cb);
+  },
+  [setClients] // ✅ Remove `clients` from dependency array
+);
+
+===================
+
+
+04: Problem=>
+
+useEffect runs every time user or addNewClients changes.
+
+This means the app keeps requesting microphone access repeatedly.
+
+This could lead to microphone permission pop-ups appearing multiple times or audio issues.
+
+🔹 Fix: Only request microphone access once when the component mounts:
+===========
+
+useEffect(() => {
+  const startCapture = async () => {
+    if (!localMediaStream.current) { // ✅ Prevent multiple requests
+      localMediaStream.current = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+    }
+  };
+
+  startCapture().then(() => {
+    addNewClients(user, () => {
+      const audioElement = audioElements.current[user?.id];
+      if (audioElement) {
+        audioElement.volume = 1;
+        audioElement.srcObject = localMediaStream.current;
+      }
+    });
+  });
+}, []); // ✅ Empty dependency array so it runs only once
+
+======================
+
+
+
+
+05: Problem =>
+
+If a user leaves the room, their audioElement stays in memory.
+
+This could lead to memory leaks.
+
+🔹 Fix: Clean up audioElements when a user leaves.
+=============
+
+const provideRef = (instance, userId) => {
+  if (instance) {
+    audioElements.current[userId] = instance;
+  } else {
+    delete audioElements.current[userId]; // ✅ Remove when user leaves
+  }
+};
+
+===============
 */

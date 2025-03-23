@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 const useStateWithFallback = (initialState) => {
   const [state, setSate] = useState(initialState);
   const cbRef = useRef();
+  console.log(cbRef)
 
   const updateState = useCallback((newState, cb) => {
     cbRef.current = cb;

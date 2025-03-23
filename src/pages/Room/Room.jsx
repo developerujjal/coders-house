@@ -12,10 +12,10 @@ const Room = () => {
   return (
 
     // in audio player the ref instance is default value of ref
-    <div>
+    <section>
       <h1>All Participents</h1>
-      {clients.map((client) => (
-        <div key={client.id}>
+      {clients.map((client, index) => (
+        <div key={index}>
           <audio 
           ref={(instance) => provideRef(instance, client.id)}
           autoPlay
@@ -23,7 +23,7 @@ const Room = () => {
           <h2>{client?.name}</h2>
         </div>
       ))}
-    </div>
+    </section>
   );
 };
 

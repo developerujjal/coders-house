@@ -1,15 +1,25 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import useStateWithFallback from "./useStateWithFallback";
+import socketInit from "../socket";
 
-const users = [
-  { id: 1, name: "Hello" },
-  { id: 2, name: "Hello 2" },
-];
+// const users = [
+//   { id: 1, name: "Hello" },
+//   { id: 2, name: "Hello 2" },
+// ];
+
 const useWebRTC = (roomId, user) => {
-  const [clients, setClients] = useStateWithFallback(users);
+  const [clients, setClients] = useStateWithFallback([]);
   const audioElements = useRef({});
   const connections = useRef({});
   const localMediaStream = useRef(null);
+  const socketRef = useRef(null);
+
+
+  useEffect(() => {
+    socketRef.current = socketInit();
+  }, []);
+
+
 
   const provideRef = (instance, userId) => {
     audioElements.current[userId] = instance;
@@ -35,7 +45,6 @@ const useWebRTC = (roomId, user) => {
         localMediaStream.current = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
-
       } catch (error) {
         console.error("Error accessing microphone:", error);
       }
@@ -45,24 +54,21 @@ const useWebRTC = (roomId, user) => {
       addNewClients(user, () => {
         const audioElement = audioElements.current[user?.id];
         if (audioElement) {
-          audioElement.volume = 0,
-            audioElement.srcObject = localMediaStream.current
+          audioElement.volume = 0;
+          audioElement.srcObject = localMediaStream.current;
         }
 
+        //Socket logic
+
+        socketRef.current.emit("Join", {})
       });
     });
   }, [addNewClients, user]);
-
-
 
   return { clients, provideRef };
 };
 
 export default useWebRTC;
-
-
-
-
 
 /* 
 

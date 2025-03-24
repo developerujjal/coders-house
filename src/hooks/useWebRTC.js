@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import useStateWithFallback from "./useStateWithFallback";
 import socketInit from "../socket";
+import ACTIONS from "../actions";
+import freeice from "freeice";
 
 // const users = [
 //   { id: 1, name: "Hello" },
@@ -14,12 +16,9 @@ const useWebRTC = (roomId, user) => {
   const localMediaStream = useRef(null);
   const socketRef = useRef(null);
 
-
   useEffect(() => {
     socketRef.current = socketInit();
   }, []);
-
-
 
   const provideRef = (instance, userId) => {
     audioElements.current[userId] = instance;
@@ -27,7 +26,7 @@ const useWebRTC = (roomId, user) => {
 
   //extra checks
   // cb mean call back fn
-  const addNewClients = useCallback(
+  const addNewClient = useCallback(
     (newClient, cb) => {
       const lookingFor = clients.find((client) => client.id === newClient.id);
       if (lookingFor === undefined) {
@@ -51,7 +50,7 @@ const useWebRTC = (roomId, user) => {
     };
 
     startCapture().then(() => {
-      addNewClients(user, () => {
+      addNewClient(user, () => {
         const audioElement = audioElements.current[user?.id];
         if (audioElement) {
           audioElement.volume = 0;
@@ -60,10 +59,62 @@ const useWebRTC = (roomId, user) => {
 
         //Socket logic
 
-        socketRef.current.emit("Join", {})
+        socketRef.current.emit(ACTIONS.JOIN, { roomId, user });
       });
     });
-  }, [addNewClients, user]);
+  }, [addNewClient, roomId, user]);
+
+  useEffect(() => {
+    const handleNewPeer = async ({ peerId, createOffer, user: remoteUser }) => {
+      //if already connected then give a warning
+      if (peerId in connections.current) {
+        return console.warn(
+          `You are already connected ${peerId} ${user?.name}`
+        );
+      }
+
+      connections.current[peerId] = new RTCPeerConnection({
+        iceServers: freeice(),
+      });
+
+      //handle new ice candidate
+
+      connections.current[peerId].onicecandidate = (event) => {
+        socketRef.current.emit(ACTIONS.RELAY_ICE, {
+          peerId,
+          icecandidate: event.candidate,
+        });
+      };
+
+      //hanlde on track on this connection
+      connections.current[peerId].ontrack = ({ streams: [remoteStream] }) => {
+        addNewClient(remoteUser, () => {
+
+          if (audioElements.current[remoteUser.id]) {
+            audioElements.current[remoteUser.id].srcObject = remoteStream;
+
+          } else {
+
+            let settled = false;
+            const interval = setInterval(() => {
+
+              if (audioElements.current[remoteUser.id]) {
+                audioElements.current[remoteUser.id].srcObject = remoteStream;
+                settled = true;
+              };
+
+              if (settled) {
+                clearInterval(interval)
+              }
+
+            }, 1000);
+          }
+        });
+      };
+    };
+
+    socketRef.current.on(ACTIONS.ADD_PEER, handleNewPeer);
+  }, [addNewClient]);
 
   return { clients, provideRef };
 };
@@ -121,7 +172,7 @@ If clients is updated, this function might still use the old value and fail to a
 This ensures that React always uses the latest state when updating clients:
 
 ================
-const addNewClients = useCallback(
+const addNewClient = useCallback(
   (newClient, cb) => {
     setClients((existingClients) => {
       const lookingFor = existingClients.find((client) => client.id === newClient.id);
@@ -139,7 +190,7 @@ const addNewClients = useCallback(
 
 04: Problem=>
 
-useEffect runs every time user or addNewClients changes.
+useEffect runs every time user or addNewClient changes.
 
 This means the app keeps requesting microphone access repeatedly.
 
@@ -158,7 +209,7 @@ useEffect(() => {
   };
 
   startCapture().then(() => {
-    addNewClients(user, () => {
+    addNewClient(user, () => {
       const audioElement = audioElements.current[user?.id];
       if (audioElement) {
         audioElement.volume = 1;

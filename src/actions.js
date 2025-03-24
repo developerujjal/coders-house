@@ -1,6 +1,8 @@
 const ACTIONS = {
     JOIN: "join",
-    LEAVE: "leave"
+    LEAVE: "leave",
+    ADD_PEER: "add-peer",
+    RELAY_ICE: "relay-ice"
 }
 
 export default ACTIONS;

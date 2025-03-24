@@ -62,7 +62,12 @@ const useWebRTC = (roomId, user) => {
         socketRef.current.emit(ACTIONS.JOIN, { roomId, user });
       });
     });
-  }, [addNewClient, roomId, user]);
+
+    return () => {
+      //Leaving logic
+    }
+  }, []);
+
 
   useEffect(() => {
     const handleNewPeer = async ({ peerId, createOffer, user: remoteUser }) => {
@@ -77,14 +82,15 @@ const useWebRTC = (roomId, user) => {
         iceServers: freeice(),
       });
 
-      //handle new ice candidate
 
+      //handle new ice candidate
       connections.current[peerId].onicecandidate = (event) => {
         socketRef.current.emit(ACTIONS.RELAY_ICE, {
           peerId,
           icecandidate: event.candidate,
         });
       };
+
 
       //hanlde on track on this connection
       connections.current[peerId].ontrack = ({ streams: [remoteStream] }) => {
@@ -111,10 +117,104 @@ const useWebRTC = (roomId, user) => {
           }
         });
       };
+
+      //add local track to remote connection
+      localMediaStream.current.getTracks().forEach((track) => {
+        connections.current[peerId].addTrack(track, localMediaStream.current)
+      });
+
+      //create offer
+      if (createOffer) {
+        const offer = await connections.current[peerId].createOffer();
+
+        //send offer to another client;
+        socketRef.current.emit(ACTIONS.RELAY_SDP, {
+          peerId,
+          sessionDescription: offer
+        })
+      }
+
     };
 
     socketRef.current.on(ACTIONS.ADD_PEER, handleNewPeer);
-  }, [addNewClient]);
+
+
+    //clear function 
+    return () => {
+      socketRef.current.off(ACTIONS.ADD_PEER)
+    }
+
+  }, []);
+
+
+  // handle ice candidate
+  useEffect(() => {
+    socketRef.current.on(ACTIONS.ICE_CANDIDATE, ({ peerId, icecandidate }) => {
+      if (icecandidate) {
+        connections.current[peerId].addIceCandidate(icecandidate)
+      }
+    });
+
+
+    return () => {
+      socketRef.current.off(ACTIONS.ICE_CANDIDATE);
+    }
+
+  }, [])
+
+
+  //hanlde sdp
+  useEffect(() => {
+
+    const handleRemoteSDP = async ({ peerId, sessionDescription: remoteSessionDescription }) => {
+      if (remoteSessionDescription) {
+        connections.current[peerId].setRemoteDescription(
+          new RTCSessionDescription(remoteSessionDescription)
+        )
+      };
+
+      //if session description is type of offer then create an answer;
+      if(remoteSessionDescription.type === 'offer'){
+        const connection = connections.current[peerId];
+        const answer = await connection.createAnswer();
+
+        connection.setLocalDescription(answer);
+
+        socketRef.current.emit(ACTIONS.RELAY_SDP, {
+          peerId,
+          sessionDescription: answer
+        })
+      };
+
+    };
+
+    socketRef.current.on(ACTIONS.SESSION_DESCRIPTION, handleRemoteSDP);
+
+    return () => {
+      socketRef.current.off(ACTIONS.SESSION_DESCRIPTION)
+    }
+  }, [])
+
+
+  //handle remove peer
+  useEffect(() => {
+
+    const handleRemovePeer = async({peerId, userId}) => {
+      if(connections.current[peerId]){
+        connections.current[peerId].close();
+      };
+
+      delete connections.current[peerId];
+      delete audioElements.current[peerId];
+      setClients((clientList) => clientList.filter(singelClient => singelClient.id !== userId))
+    };
+
+    socketRef.current.on(ACTIONS.REMOVE_PEER, handleRemovePeer);
+
+    return () => {
+      socketRef.current.off(ACTIONS.REMOVE_PEER);
+    }
+  },[])
 
   return { clients, provideRef };
 };

@@ -3,6 +3,7 @@ import styles from './Rooms.module.css';
 import RoomCard from '../../components/RoomCard/RoomCard';
 import CreateRoomModal from '../../components/Modals/CreateRoomModal';
 import useAxiosCommon from '../../hooks/useAxiosCommon';
+import useUser from '../../hooks/getUser/useUser';
 
 // const rooms = [
 //     {
@@ -79,7 +80,9 @@ const Rooms = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [rooms, setRooms] = useState([]);
     const axiosCommon = useAxiosCommon();
+    const {dbUser} = useUser()
 
+    console.log(dbUser)
 
     useEffect(() => {
         const fetchRoom = async () => {

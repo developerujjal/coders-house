@@ -20,6 +20,9 @@ const AuthProvider = ({ children }) => {
                 image: currentUser?.photoURL
             }
 
+
+            
+
             const data = currentUser ? userData : null;
 
             dispatch(setAuthUser(data))

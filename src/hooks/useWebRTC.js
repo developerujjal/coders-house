@@ -4,218 +4,202 @@ import socketInit from "../socket";
 import ACTIONS from "../actions";
 import freeice from "freeice";
 
-// const users = [
-//   { id: 1, name: "Hello" },
-//   { id: 2, name: "Hello 2" },
-// ];
-
+// Custom hook for WebRTC functionality
 const useWebRTC = (roomId, user) => {
+  // State to store the clients currently in the room
   const [clients, setClients] = useStateWithFallback([]);
+
+  // Refs to store elements and media streams
   const audioElements = useRef({});
   const connections = useRef({});
   const localMediaStream = useRef(null);
   const socketRef = useRef(null);
 
+  // Initialize socket connection on component mount
   useEffect(() => {
     socketRef.current = socketInit();
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once
 
+  // Helper function to provide reference to audio elements
   const provideRef = (instance, userId) => {
     audioElements.current[userId] = instance;
   };
 
-  //extra checks
-  // cb mean call back fn
+
+
   const addNewClient = useCallback(
     (newClient, cb) => {
-      const lookingFor = clients.find((client) => client.id === newClient.id);
-      if (lookingFor === undefined) {
-        setClients((exsitingClient) => [...exsitingClient, newClient], cb);
-      }
+      setClients((existingClients) => {
+        // Avoid adding duplicate clients
+        // const lookingFor = existingClients.find((client) => client.id === newClient.id);
+        // if (!lookingFor) {
+        //   return [...existingClients, newClient];
+        // }
+
+        if (!existingClients.some((client) => client.id === newClient.id)) {
+          return [...existingClients, newClient];
+        }
+        return existingClients;
+      }, cb);
     },
-    [clients, setClients]
+    [setClients]
   );
 
-  //Capture the audio media
 
+
+  // Capture the local media stream and join the room
   useEffect(() => {
     const startCapture = async () => {
       try {
         localMediaStream.current = await navigator.mediaDevices.getUserMedia({
-          audio: true,
+          audio: true, // Only capture audio for now
+        });
+
+        // Add the user as the first client in the room
+        addNewClient(user, () => {
+          const audioElement = audioElements.current[user?.id];
+          if (audioElement) {
+            audioElement.volume = 0; // Mute local audio
+            audioElement.srcObject = localMediaStream.current;
+          }
+
+          // Emit the JOIN action to the server to join the room
+          socketRef.current.emit(ACTIONS.JOIN, { roomId, user });
         });
       } catch (error) {
         console.error("Error accessing microphone:", error);
       }
     };
 
-    startCapture().then(() => {
-      addNewClient(user, () => {
-        const audioElement = audioElements.current[user?.id];
-        if (audioElement) {
-          audioElement.volume = 0;
-          audioElement.srcObject = localMediaStream.current;
-        }
+    startCapture();
 
-        //Socket logic
-
-        socketRef.current.emit(ACTIONS.JOIN, { roomId, user });
-      });
-    });
-
+    // Cleanup on component unmount
     return () => {
-      //Leaving logic
-    }
-  }, []);
+      if (localMediaStream.current) {
+        localMediaStream.current.getTracks().forEach((track) => track.stop()); // Stop all media tracks
+        localMediaStream.current = null; // Nullify the stream
+      }
+      socketRef.current.emit(ACTIONS.LEAVE, { roomId }); // Emit LEAVE action when leaving the room
+    };
+  }, [roomId, user]);
 
-
+  // Handle new peer joining the room
   useEffect(() => {
     const handleNewPeer = async ({ peerId, createOffer, user: remoteUser }) => {
-      //if already connected then give a warning
-      if (peerId in connections.current) {
-        return console.warn(
-          `You are already connected ${peerId} ${user?.name}`
-        );
-      }
+      // If a connection already exists, do nothing
+      if (connections.current[peerId]) return;
 
-      connections.current[peerId] = new RTCPeerConnection({
-        iceServers: freeice(),
-      });
+      // Create a new peer connection
+      const peerConnection = new RTCPeerConnection({ iceServers: freeice() });
+      connections.current[peerId] = peerConnection;
 
-
-      //handle new ice candidate
-      connections.current[peerId].onicecandidate = (event) => {
-        socketRef.current.emit(ACTIONS.RELAY_ICE, {
-          peerId,
-          icecandidate: event.candidate,
-        });
+      // Handle ICE candidates (network information)
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          socketRef.current.emit(ACTIONS.RELAY_ICE, {
+            peerId,
+            icecandidate: event.candidate,
+          });
+        }
       };
 
-
-      //hanlde on track on this connection
-      connections.current[peerId].ontrack = ({ streams: [remoteStream] }) => {
+      // Handle incoming media streams from the remote peer
+      peerConnection.ontrack = ({ streams: [remoteStream] }) => {
         addNewClient(remoteUser, () => {
-
           if (audioElements.current[remoteUser.id]) {
             audioElements.current[remoteUser.id].srcObject = remoteStream;
-
           } else {
-
             let settled = false;
             const interval = setInterval(() => {
-
+              // Retry every 1 second if audio element is not available
               if (audioElements.current[remoteUser.id]) {
                 audioElements.current[remoteUser.id].srcObject = remoteStream;
                 settled = true;
-              };
-
-              if (settled) {
-                clearInterval(interval)
               }
-
+              if (settled) clearInterval(interval); // Stop retrying once settled
             }, 1000);
           }
         });
       };
 
-      //add local track to remote connection
-      localMediaStream.current.getTracks().forEach((track) => {
-        connections.current[peerId].addTrack(track, localMediaStream.current)
+      // Add the local media tracks to the peer connection
+      localMediaStream.current?.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localMediaStream.current);
       });
 
-      //create offer
+      // If the peer is the first one to connect, create an offer
       if (createOffer) {
-        const offer = await connections.current[peerId].createOffer();
-
-        //send offer to another client;
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
         socketRef.current.emit(ACTIONS.RELAY_SDP, {
           peerId,
-          sessionDescription: offer
-        })
+          sessionDescription: offer,
+        });
       }
-
     };
 
     socketRef.current.on(ACTIONS.ADD_PEER, handleNewPeer);
+    return () => socketRef.current.off(ACTIONS.ADD_PEER, handleNewPeer); // Cleanup listener
+  }, [addNewClient]);
 
-
-    //clear function 
-    return () => {
-      socketRef.current.off(ACTIONS.ADD_PEER)
-    }
-
-  }, []);
-
-
-  // handle ice candidate
+  // Handle incoming ICE candidate
   useEffect(() => {
     socketRef.current.on(ACTIONS.ICE_CANDIDATE, ({ peerId, icecandidate }) => {
-      if (icecandidate) {
-        connections.current[peerId].addIceCandidate(icecandidate)
+      if (icecandidate && connections.current[peerId]) {
+        connections.current[peerId].addIceCandidate(icecandidate);
       }
     });
 
-
     return () => {
-      socketRef.current.off(ACTIONS.ICE_CANDIDATE);
-    }
+      socketRef.current.off(ACTIONS.ICE_CANDIDATE); // Cleanup listener
+    };
+  }, []);
 
-  }, [])
-
-
-  //hanlde sdp
+  // Handle remote session description (SDP) for peer connections
   useEffect(() => {
+    const handleRemoteSDP = async ({ peerId, sessionDescription }) => {
+      const peerConnection = connections.current[peerId];
+      if (!peerConnection) return;
 
-    const handleRemoteSDP = async ({ peerId, sessionDescription: remoteSessionDescription }) => {
-      if (remoteSessionDescription) {
-        connections.current[peerId].setRemoteDescription(
-          new RTCSessionDescription(remoteSessionDescription)
-        )
-      };
+      await peerConnection.setRemoteDescription(
+        new RTCSessionDescription(sessionDescription)
+      );
 
-      //if session description is type of offer then create an answer;
-      if(remoteSessionDescription.type === 'offer'){
-        const connection = connections.current[peerId];
-        const answer = await connection.createAnswer();
-
-        connection.setLocalDescription(answer);
+      if (sessionDescription.type === "offer") {
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
 
         socketRef.current.emit(ACTIONS.RELAY_SDP, {
           peerId,
-          sessionDescription: answer
-        })
-      };
-
+          sessionDescription: answer,
+        });
+      }
     };
 
     socketRef.current.on(ACTIONS.SESSION_DESCRIPTION, handleRemoteSDP);
+    return () => socketRef.current.off(ACTIONS.SESSION_DESCRIPTION); // Cleanup listener
+  }, []);
 
-    return () => {
-      socketRef.current.off(ACTIONS.SESSION_DESCRIPTION)
-    }
-  }, [])
-
-
-  //handle remove peer
+  // Handle removal of peers (users leaving the room)
   useEffect(() => {
-
-    const handleRemovePeer = async({peerId, userId}) => {
-      if(connections.current[peerId]){
+    const handleRemovePeer = ({ peerId, userId }) => {
+      if (connections.current[peerId]) {
         connections.current[peerId].close();
-      };
+        delete connections.current[peerId];
+      }
+      delete audioElements.current[userId];
 
-      delete connections.current[peerId];
-      delete audioElements.current[peerId];
-      setClients((clientList) => clientList.filter(singelClient => singelClient.id !== userId))
+      // Remove the client from the state
+      setClients((prevClients) =>
+        prevClients.filter((client) => client.id !== userId)
+      );
     };
 
     socketRef.current.on(ACTIONS.REMOVE_PEER, handleRemovePeer);
+    return () => socketRef.current.off(ACTIONS.REMOVE_PEER); // Cleanup listener
+  }, []);
 
-    return () => {
-      socketRef.current.off(ACTIONS.REMOVE_PEER);
-    }
-  },[])
-
+  // Return the list of clients and the provideRef function
   return { clients, provideRef };
 };
 

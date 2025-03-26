@@ -15,38 +15,37 @@ const Room = () => {
   const { dbUser: user } = useUser();
   const { clients, provideRef, handleMute } = useWebRTC(roomId, user);
   const [getRoom, setGetRoom] = useState({});
-  const [isMute, setIsMute] = useState(true);
+  // const [isMuted, setIsMuted] = useState(true);
   const navigate = useNavigate();
   const axiosCommon = useAxiosCommon();
 
+  // Find current user's mute state from clients array
+  const currentUserClient = clients.find((client) => client.id === user?.id);
+  const isMuted = currentUserClient?.muted ?? true;
 
 
-  //mute and unmute function
-  useEffect(() => {
-    handleMute(isMute, user?.id);
-  }, [handleMute, isMute, user?.id]);
-
-
-
-  //fetch room data
+  // Fetch room data
   useEffect(() => {
     const fetchRoom = async () => {
       const { data } = await axiosCommon.get(`/api/rooms/${roomId}`);
-      if (data) {
-        setGetRoom(data);
-      }
+      data && setGetRoom(data);
     };
-
     fetchRoom();
   }, [axiosCommon, roomId]);
 
-  const handManualLeave = () => {
-    navigate(-1);
+  const handleMuteClick = () => {
+    // setIsMuted(!isMuted);
+
+    if (user?.id) {
+      // Toggle mute based on latest state from WebRTC hook
+      handleMute(!isMuted, user.id);
+    }
   };
 
-  console.log(getRoom);
+  const handManualLeave = () => navigate(-1);
+
+  console.log(clients);
   return (
-    // in audio player the ref instance is default value of ref
     <section>
       <div className="container">
         <button onClick={handManualLeave} className={styles.goBack}>
@@ -69,31 +68,39 @@ const Room = () => {
         </div>
 
         <div className={styles.clientsList}>
-          {clients.map((client, index) => (
-            <div className={styles.client} key={index}>
+          {clients.map((client) => (
+            <div className={styles.client} key={client.id}>
               <div className={styles.userHead}>
                 <audio
                   ref={(instance) => provideRef(instance, client.id)}
                   autoPlay
-                  // controls
                 ></audio>
                 <img
                   src={client.image}
                   referrerPolicy="no-referrer"
-                  alt="logo"
+                  alt="avatar"
                   className={styles.userAvatar}
                 />
-
-                <button
-                  // onClick={() => handleMuteClick(client.id)}
-                  className={styles.micBtn}
-                >
-                  {client.muted ? (
-                    <BsMicMuteFill size={22} />
-                  ) : (
-                    <FiMic size={22} />
-                  )}
-                </button>
+                {/* Only show mute button for current user */}
+                {/* client.id !== user.id we also can check into handleMuteClick function
+                 by pass client.id */}
+                {client.id === user?.id ? (
+                  <button onClick={handleMuteClick} className={styles.micBtn}>
+                    {isMuted ? (
+                      <BsMicMuteFill size={22} />
+                    ) : (
+                      <FiMic size={22} />
+                    )}
+                  </button>
+                ) : (
+                  <div className={styles.micBtn}>
+                    {client.muted ? (
+                      <BsMicMuteFill size={22} />
+                    ) : (
+                      <FiMic size={22} />
+                    )}
+                  </div>
+                )}
               </div>
               <h2>{client?.name}</h2>
             </div>

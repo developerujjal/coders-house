@@ -14,54 +14,13 @@ const useWebRTC = (roomId, user) => {
   const connections = useRef({});
   const localMediaStream = useRef(null);
   const socketRef = useRef(null);
+  const clientsRef = useRef(null);
 
 
   // Initialize socket connection on component mount
   useEffect(() => {
     socketRef.current = socketInit();
   }, []); // Empty dependency array ensures this runs only once
-
-
-  // Helper function to provide reference to audio elements
-  const provideRef = (instance, userId) => {
-    audioElements.current[userId] = instance;
-  };
-
-
-  //Hanlde mute and unmute
-  const handleMute = (isMute, userId) => {
-    console.log('Mute: ', isMute);
-
-    let settled = false;
-
-    const interval = setInterval(() => {
-
-      if (localMediaStream.current) {
-        localMediaStream.current.getTracks()[0].enabled = !isMute;  // another option: isMute === 'true ? true : false
-
-        if (isMute) {
-          socketRef.current.emit(ACTIONS.MUTE, {
-            roomId,
-            userId
-          });
-        } else {
-          socketRef.current.emit(ACTIONS.UN_MUTE, {
-            roomId,
-            userId
-          });
-        };
-
-
-        settled = true;
-
-      };
-
-      if (settled) {
-        clearInterval(interval)
-      };
-    }, 200)
-
-  }
 
 
 
@@ -95,6 +54,11 @@ const useWebRTC = (roomId, user) => {
           audio: true, // Only capture audio for now
         });
 
+        // // 2. Immediately disable the audio track (WebRTC level mute)
+        // const audioTrack = localMediaStream.current.getAudioTracks()[0];
+        // audioTrack.enabled = false; // <- Critical WebRTC mute
+
+
         // Add the user as the first client in the room
         addNewClient({ ...user, muted: true }, () => {
           const audioElement = audioElements.current[user?.id];
@@ -123,6 +87,8 @@ const useWebRTC = (roomId, user) => {
     };
   }, [roomId, user]);
 
+
+
   // Handle new peer joining the room
   useEffect(() => {
     const handleNewPeer = async ({ peerId, createOffer, user: remoteUser }) => {
@@ -150,7 +116,7 @@ const useWebRTC = (roomId, user) => {
             audioElements.current[remoteUser.id].srcObject = remoteStream;
           } else {
             let settled = false;
-            const interval = setInterval(() => {
+            let interval = setInterval(() => {
               // Retry every 1 second if audio element is not available
               if (audioElements.current[remoteUser.id]) {
                 audioElements.current[remoteUser.id].srcObject = remoteStream;
@@ -182,6 +148,8 @@ const useWebRTC = (roomId, user) => {
     return () => socketRef.current.off(ACTIONS.ADD_PEER, handleNewPeer); // Cleanup listener
   }, [addNewClient]);
 
+
+
   // Handle incoming ICE candidate
   useEffect(() => {
     socketRef.current.on(ACTIONS.ICE_CANDIDATE, ({ peerId, icecandidate }) => {
@@ -194,6 +162,8 @@ const useWebRTC = (roomId, user) => {
       socketRef.current.off(ACTIONS.ICE_CANDIDATE); // Cleanup listener
     };
   }, []);
+
+
 
   // Handle remote session description (SDP) for peer connections
   useEffect(() => {
@@ -220,6 +190,8 @@ const useWebRTC = (roomId, user) => {
     return () => socketRef.current.off(ACTIONS.SESSION_DESCRIPTION); // Cleanup listener
   }, []);
 
+
+
   // Handle removal of peers (users leaving the room)
   useEffect(() => {
     const handleRemovePeer = ({ peerId, userId }) => {
@@ -241,9 +213,86 @@ const useWebRTC = (roomId, user) => {
 
 
 
+
+  //Store the clients into the clientsRef
+  useEffect(() => {
+    clientsRef.current = clients;
+  }, [clients]);
+
+
+
+
+  // Updated "Listen for mute/unmute" useEffect
+  useEffect(() => {
+    const updateMuteState = ({ userId, muteState }) => {
+      console.log("mute/unmute: ", muteState)
+      setClients(
+        (prev) =>
+          prev.map(client =>
+            client.id === userId ? { ...client, muted: muteState } : client
+          ),
+        () => { } // Empty callback to satisfy hook's API
+      );
+    };
+
+    socketRef.current.on(ACTIONS.MUTE, ({ userId }) =>
+      updateMuteState({ userId, muteState: true })
+    );
+
+    socketRef.current.on(ACTIONS.UN_MUTE, ({ userId }) =>
+      updateMuteState({ userId, muteState:false })
+    );
+
+    return () => {
+      socketRef.current.off(ACTIONS.MUTE);
+      socketRef.current.off(ACTIONS.UN_MUTE);
+    };
+  }, [setClients]);
+
+
+
+
+  // Helper function to provide reference to audio elements
+  const provideRef = (instance, userId) => {
+    audioElements.current[userId] = instance;
+  };
+
+
+  //Hanlde mute and unmute
+  const handleMute = (isMute, userId) => {
+
+    console.log("MUTE IS: ", isMute)
+
+    if (userId === user.id) {
+      const audioTrack = localMediaStream.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !isMute;
+
+        // Emit action
+        const action = isMute ? ACTIONS.MUTE : ACTIONS.UN_MUTE;
+        socketRef.current.emit(action, { roomId, userId });
+
+        // Update clients state WITH callback (second argument)
+        setClients(
+          (prev) => prev.map(client =>
+            client.id === userId ? { ...client, muted: isMute } : client
+          ),
+          () => {/* Optional: Add logic here if needed after state update */ }
+        );
+
+        console.log(clients)
+      }
+    }
+  };
+
+
+
+
   // Return the list of clients and the provideRef function
   return { clients, provideRef, handleMute };
 };
+
+
 
 export default useWebRTC;
 

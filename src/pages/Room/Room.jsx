@@ -20,8 +20,8 @@ const Room = () => {
   const axiosCommon = useAxiosCommon();
 
   // Find current user's mute state from clients array
-  const currentUserClient = clients.find((client) => client.id === user?.id);
-  const isMuted = currentUserClient?.muted ?? true;
+  const currentUserClient = clients.find(client => client.id === user?.id);
+  const isMuted = currentUserClient?.muted ?? true; // Default to true if undefined
 
 
   // Fetch room data

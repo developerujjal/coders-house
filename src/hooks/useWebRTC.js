@@ -51,25 +51,26 @@ const useWebRTC = (roomId, user) => {
     const startCapture = async () => {
       try {
         localMediaStream.current = await navigator.mediaDevices.getUserMedia({
-          audio: true, // Only capture audio for now
+          audio: true,
         });
 
-        // // 2. Immediately disable the audio track (WebRTC level mute)
-        // const audioTrack = localMediaStream.current.getAudioTracks()[0];
-        // audioTrack.enabled = false; // <- Critical WebRTC mute
+        // Physical mute
+        const audioTrack = localMediaStream.current.getAudioTracks()[0];
+        audioTrack.enabled = false;
 
-
-        // Add the user as the first client in the room
+        // Add client with muted state
         addNewClient({ ...user, muted: true }, () => {
           const audioElement = audioElements.current[user?.id];
           if (audioElement) {
-            audioElement.volume = 0; // Mute local audio
+            audioElement.volume = 0;
             audioElement.srcObject = localMediaStream.current;
           }
 
-          // Emit the JOIN action to the server to join the room
+          // Emit both JOIN and initial MUTE
           socketRef.current.emit(ACTIONS.JOIN, { roomId, user });
+          socketRef.current.emit(ACTIONS.MUTE, { roomId, userId: user.id });
         });
+
       } catch (error) {
         console.error("Error accessing microphone:", error);
       }
@@ -85,7 +86,7 @@ const useWebRTC = (roomId, user) => {
       }
       socketRef.current.emit(ACTIONS.LEAVE, { roomId }); // Emit LEAVE action when leaving the room
     };
-  }, [roomId, user]);
+  }, [addNewClient, roomId, user]);
 
 
 
@@ -240,7 +241,7 @@ const useWebRTC = (roomId, user) => {
     );
 
     socketRef.current.on(ACTIONS.UN_MUTE, ({ userId }) =>
-      updateMuteState({ userId, muteState:false })
+      updateMuteState({ userId, muteState: false })
     );
 
     return () => {

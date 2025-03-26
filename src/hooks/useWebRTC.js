@@ -15,15 +15,55 @@ const useWebRTC = (roomId, user) => {
   const localMediaStream = useRef(null);
   const socketRef = useRef(null);
 
+
   // Initialize socket connection on component mount
   useEffect(() => {
     socketRef.current = socketInit();
   }, []); // Empty dependency array ensures this runs only once
 
+
   // Helper function to provide reference to audio elements
   const provideRef = (instance, userId) => {
     audioElements.current[userId] = instance;
   };
+
+
+  //Hanlde mute and unmute
+  const handleMute = (isMute, userId) => {
+    console.log('Mute: ', isMute);
+
+    let settled = false;
+
+    const interval = setInterval(() => {
+
+      if (localMediaStream.current) {
+        localMediaStream.current.getTracks()[0].enabled = !isMute;  // another option: isMute === 'true ? true : false
+
+        if (isMute) {
+          socketRef.current.emit(ACTIONS.MUTE, {
+            roomId,
+            userId
+          });
+        } else {
+          socketRef.current.emit(ACTIONS.UN_MUTE, {
+            roomId,
+            userId
+          });
+        };
+
+
+        settled = true;
+
+      };
+
+      if (settled) {
+        clearInterval(interval)
+      };
+    }, 200)
+
+  }
+
+
 
 
 
@@ -56,7 +96,7 @@ const useWebRTC = (roomId, user) => {
         });
 
         // Add the user as the first client in the room
-        addNewClient(user, () => {
+        addNewClient({ ...user, muted: true }, () => {
           const audioElement = audioElements.current[user?.id];
           if (audioElement) {
             audioElement.volume = 0; // Mute local audio
@@ -105,7 +145,7 @@ const useWebRTC = (roomId, user) => {
 
       // Handle incoming media streams from the remote peer
       peerConnection.ontrack = ({ streams: [remoteStream] }) => {
-        addNewClient(remoteUser, () => {
+        addNewClient({ ...remoteUser, muted: true }, () => {
           if (audioElements.current[remoteUser.id]) {
             audioElements.current[remoteUser.id].srcObject = remoteStream;
           } else {
@@ -197,13 +237,18 @@ const useWebRTC = (roomId, user) => {
 
     socketRef.current.on(ACTIONS.REMOVE_PEER, handleRemovePeer);
     return () => socketRef.current.off(ACTIONS.REMOVE_PEER); // Cleanup listener
-  }, []);
+  }, [setClients]);
+
+
 
   // Return the list of clients and the provideRef function
-  return { clients, provideRef };
+  return { clients, provideRef, handleMute };
 };
 
 export default useWebRTC;
+
+
+
 
 /* 
 

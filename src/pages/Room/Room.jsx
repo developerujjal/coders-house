@@ -8,33 +8,43 @@ import { FaArrowRotateLeft } from "react-icons/fa6";
 import { FaHand } from "react-icons/fa6";
 import { BsMicMuteFill } from "react-icons/bs";
 import useAxiosCommon from "../../hooks/useAxiosCommon";
+import { FiMic } from "react-icons/fi";
 
 const Room = () => {
   const { id: roomId } = useParams();
   const { dbUser: user } = useUser();
-  const { clients, provideRef } = useWebRTC(roomId, user);
+  const { clients, provideRef, handleMute } = useWebRTC(roomId, user);
   const [getRoom, setGetRoom] = useState({});
+  const [isMute, setIsMute] = useState(true);
   const navigate = useNavigate();
   const axiosCommon = useAxiosCommon();
 
+
+
+  //mute and unmute function
   useEffect(() => {
-    const fetchRoom = async() => {
-      const {data} = await axiosCommon.get(`/api/rooms/${roomId}`);
-      if(data){
+    handleMute(isMute, user?.id);
+  }, [handleMute, isMute, user?.id]);
+
+
+
+  //fetch room data
+  useEffect(() => {
+    const fetchRoom = async () => {
+      const { data } = await axiosCommon.get(`/api/rooms/${roomId}`);
+      if (data) {
         setGetRoom(data);
       }
-    }
+    };
 
     fetchRoom();
-  },[axiosCommon, roomId])
-
+  }, [axiosCommon, roomId]);
 
   const handManualLeave = () => {
     navigate(-1);
   };
 
-
-  console.log(getRoom)
+  console.log(getRoom);
   return (
     // in audio player the ref instance is default value of ref
     <section>
@@ -78,21 +88,11 @@ const Room = () => {
                   // onClick={() => handleMuteClick(client.id)}
                   className={styles.micBtn}
                 >
-                  {/* {client.muted ? (
-                    <img
-                      className={styles.mic}
-                      src="/images/mic-mute.png"
-                      alt="mic"
-                    />
+                  {client.muted ? (
+                    <BsMicMuteFill size={22} />
                   ) : (
-                    <img
-                      className={styles.micImg}
-                      src="/images/mic.png"
-                      alt="mic"
-                    />
-                  )} */}
-
-                  <BsMicMuteFill size={22} />
+                    <FiMic size={22} />
+                  )}
                 </button>
               </div>
               <h2>{client?.name}</h2>
